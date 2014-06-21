@@ -8,7 +8,9 @@
 namespace TVRename
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Windows.Forms;
 
     public class ActionCopyMoveRename : Item, Action, ScanListItem
@@ -78,6 +80,13 @@ namespace TVRename
             {
             }
 
+            ActionCopyMoveRename.WriteMetaData(
+                this.From.FullName,
+                this.Episode,
+                settings.ArtworkPath);
+
+
+
             if (this.QuickOperation())
                 this.OSMoveRename(stats); // ask the OS to do it for us, since it's easy and quick!
             else
@@ -111,7 +120,7 @@ namespace TVRename
         {
             ActionCopyMoveRename cmr = o as ActionCopyMoveRename;
 
-            if (cmr == null || this.From.Directory == null || this.To.Directory == null || cmr.From.Directory==null || cmr.To.Directory==null)
+            if (cmr == null || this.From.Directory == null || this.To.Directory == null || cmr.From.Directory == null || cmr.To.Directory == null)
                 return 0;
 
             string s1 = this.From.FullName + (this.From.Directory.Root.FullName != this.To.Directory.Root.FullName ? "0" : "1");
@@ -210,8 +219,8 @@ namespace TVRename
         {
             copier.Close();
             string tempName = TempFor(this.To);
-            if (File.Exists(tempName))
-                File.Delete(tempName);
+            if (System.IO.File.Exists(tempName))
+                System.IO.File.Delete(tempName);
         }
 
         private void NicelyStopAndCleanUp_Streams(BinaryReader msr, BinaryWriter msw)
@@ -220,8 +229,8 @@ namespace TVRename
             {
                 msw.Close();
                 string tempName = TempFor(this.To);
-                if (File.Exists(tempName))
-                    File.Delete(tempName);
+                if (System.IO.File.Exists(tempName))
+                    System.IO.File.Delete(tempName);
             }
             if (msr != null)
                 msr.Close();
@@ -254,7 +263,7 @@ namespace TVRename
                     // XP won't actually do a rename if its only a case difference
                     string tempName = TempFor(this.To);
                     this.From.MoveTo(tempName);
-                    File.Move(tempName, this.To.FullName);
+                    System.IO.File.Move(tempName, this.To.FullName);
                 }
                 else
                     this.From.MoveTo(this.To.FullName);
@@ -296,8 +305,8 @@ namespace TVRename
                 long thisFileSize = this.SourceFileSize();
 
                 string tempName = TempFor(this.To);
-                if (File.Exists(tempName))
-                    File.Delete(tempName);
+                if (System.IO.File.Exists(tempName))
+                    System.IO.File.Delete(tempName);
 
                 if (useWin32)
                 {
@@ -311,7 +320,7 @@ namespace TVRename
                     msw = new BinaryWriter(new FileStream(tempName, FileMode.CreateNew));
                 }
 
-                for (;;)
+                for (; ; )
                 {
                     int n = useWin32 ? copier.ReadBlocks(kArrayLength) : msr.Read(dataArray, 0, kArrayLength);
                     if (n == 0)
@@ -349,7 +358,7 @@ namespace TVRename
                 // rename temp version to final name
                 if (this.To.Exists)
                     this.To.Delete(); // outta ma way!
-                File.Move(tempName, this.To.FullName);
+                System.IO.File.Move(tempName, this.To.FullName);
 
                 KeepTimestamps(this.From, this.To);
 
@@ -395,6 +404,69 @@ namespace TVRename
             }
         }
 
+        private static void WriteMetaData(string episodePath, ProcessedEpisode episode, string artworkRootPath)
+        {
+            using (TagLib.File file = TagLib.File.Create(episodePath))
+            {
+                // clear out all the old tags on the file
+                file.RemoveTags(TagLib.TagTypes.AllTags);
+                file.Tag.Clear();
+
+                TagLib.Mpeg4.AppleTag customTag = (TagLib.Mpeg4.AppleTag)file.GetTag(TagLib.TagTypes.Apple, true);
+
+                // Track Number? (Not sure what this is used for)
+                customTag.Track = (uint)episode.EpNum2;
+
+                // STIK || Media Type Tag
+                customTag.ClearData("stik");
+                var stikVector = new TagLib.ByteVector();
+                stikVector.Add((byte)10);
+                customTag.SetData("stik", stikVector, (int)TagLib.Mpeg4.AppleDataBox.FlagType.ContainsData);
+
+                // Show Name
+                customTag.ClearData("tvsh");
+                customTag.SetText("tvsh", episode.SI.ShowName);
+
+                // Season Number
+                customTag.ClearData("tvsn");
+                var seasonNumberVector = TagLib.ByteVector.FromInt(episode.SeasonNumber);
+                customTag.SetData("tvsn", seasonNumberVector, (int)TagLib.Mpeg4.AppleDataBox.FlagType.ContainsData);
+
+                // Episode Number
+                customTag.ClearData("tves");
+                var episodeNumberVector = TagLib.ByteVector.FromInt(episode.EpNum2);
+                customTag.SetData("tves", episodeNumberVector, (int)TagLib.Mpeg4.AppleDataBox.FlagType.ContainsData);
+
+                // Episode Name
+                customTag.ClearData("tven");
+                customTag.SetText("tven", episode.Name);
+
+                // Description
+                customTag.ClearData("ldes");
+                customTag.SetText("ldes", episode.Overview);
+
+                // Artwork
+                if (file.Tag.Pictures.Length < 1 && !string.IsNullOrEmpty(artworkRootPath))
+                {
+                    var artwork = ActionCopyMoveRename.FindArtworkPath(@"C:\Development\TestMedia\artwork", episode.SI.ShowName, episode.SeasonNumber);
+                    file.Tag.Pictures = artwork.Select(a => new TagLib.Picture(a)).ToArray();
+                }
+
+                file.Save();
+            }
+        }
+
+        public static List<string> FindArtworkPath(string rootPath, string showName, int seasonNumber)
+        {
+            var possibleArtwork = new List<string>();
+            possibleArtwork.AddRange(Directory.GetFiles(rootPath,
+                showName + "-Season" + seasonNumber + ".*"));
+            possibleArtwork.AddRange(Directory.GetFiles(rootPath,
+                showName.Replace(" ", "") + "-Season" + seasonNumber + ".*"));
+            possibleArtwork.AddRange(Directory.GetFiles(rootPath,
+                showName + "?.*"));
+            return possibleArtwork;
+        }
 
         // --------------------------------------------------------------------------------------------------------
 

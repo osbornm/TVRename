@@ -121,7 +121,7 @@ namespace TVRename
                 if (IsShowLevel)
                 {
                     ShowItem.ShowAirStatus status =
-                        (ShowItem.ShowAirStatus) Enum.Parse(typeof (ShowItem.ShowAirStatus), Status);
+                        (ShowItem.ShowAirStatus)Enum.Parse(typeof(ShowItem.ShowAirStatus), Status);
                     switch (status)
                     {
                         case ShowItem.ShowAirStatus.Aired:
@@ -139,7 +139,7 @@ namespace TVRename
                 else
                 {
                     Season.SeasonStatus status =
-                        (Season.SeasonStatus) Enum.Parse(typeof (Season.SeasonStatus), Status);
+                        (Season.SeasonStatus)Enum.Parse(typeof(Season.SeasonStatus), Status);
                     switch (status)
                     {
                         case Season.SeasonStatus.Aired:
@@ -176,7 +176,7 @@ namespace TVRename
         }
 
         #endregion
-
+        public string ArtworkPath = "";
         public bool AutoSelectShowInMyShows = true;
         public bool BGDownload = false;
         public bool CheckuTorrent = false;
@@ -233,7 +233,7 @@ namespace TVRename
         public string SpecialsFolderName = "Specials";
         public int StartupTab = 0;
         public Searchers TheSearchers = new Searchers();
-        
+
         public string[] VideoExtensionsArray
         {
             get { return VideoExtensionsString.Split(';'); }
@@ -254,7 +254,7 @@ namespace TVRename
         {
             this.SetToDefaults();
         }
-        
+
         public TVSettings(XmlReader reader)
         {
             this.SetToDefaults();
@@ -266,6 +266,7 @@ namespace TVRename
             reader.Read();
             while (!reader.EOF)
             {
+
                 if ((reader.Name == "Settings") && !reader.IsStartElement())
                     break; // all done
 
@@ -274,6 +275,10 @@ namespace TVRename
                     string srch = reader.ReadElementContentAsString(); // and match it based on name...
                     this.TheSearchers.CurrentSearch = srch;
                 }
+
+                else if (reader.Name == "ArtworkPath")
+                    this.ArtworkPath = reader.ReadElementContentAsString();
+
                 else if (reader.Name == "TheSearchers")
                 {
                     this.TheSearchers = new Searchers(reader.ReadSubtree());
@@ -557,6 +562,11 @@ namespace TVRename
                 writer.WriteEndAttribute();
                 writer.WriteEndElement();
             }
+
+            writer.WriteEndElement();
+            writer.WriteStartElement("ArtworkPath");
+            writer.WriteValue(this.ArtworkPath);
+
             writer.WriteEndElement();
             writer.WriteStartElement("ExportWTWRSS");
             writer.WriteValue(this.ExportWTWRSS);
@@ -676,7 +686,7 @@ namespace TVRename
             writer.WriteValue(this.FolderJpg);
             writer.WriteEndElement();
             writer.WriteStartElement("FolderJpgIs");
-            writer.WriteValue((int) this.FolderJpgIs);
+            writer.WriteValue((int)this.FolderJpgIs);
             writer.WriteEndElement();
             writer.WriteStartElement("CheckuTorrent");
             writer.WriteValue(this.CheckuTorrent);
@@ -771,7 +781,7 @@ namespace TVRename
 
             writer.WriteEndElement(); // settings
         }
-        
+
         public string ItemForFolderJpg()
         {
             switch (this.FolderJpgIs)
@@ -798,7 +808,7 @@ namespace TVRename
         public static bool OKExtensionsString(string s)
         {
             if (string.IsNullOrEmpty(s))
-              return true;
+                return true;
 
             string[] t = s.Split(';');
             foreach (string s2 in t)
