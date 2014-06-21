@@ -7,10 +7,10 @@
 // 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
+using System.Threading;
+using System.Windows.Forms;
 using ColumnHeader = SourceGrid.Cells.ColumnHeader;
 
 namespace TVRename
@@ -68,9 +68,9 @@ namespace TVRename
             S.Replacements.Clear();
             for (int i = 1; i < this.ReplacementsGrid.RowsCount; i++)
             {
-                string from = (string) (this.ReplacementsGrid[i, 0].Value);
-                string to = (string) (this.ReplacementsGrid[i, 1].Value);
-                bool ins = (bool) (this.ReplacementsGrid[i, 2].Value);
+                string from = (string)(this.ReplacementsGrid[i, 0].Value);
+                string to = (string)(this.ReplacementsGrid[i, 1].Value);
+                bool ins = (bool)(this.ReplacementsGrid[i, 2].Value);
                 if (!string.IsNullOrEmpty(from))
                     S.Replacements.Add(new Replacement(from, to, ins));
             }
@@ -95,7 +95,7 @@ namespace TVRename
             S.OtherExtensionsString = this.txtOtherExtensions.Text;
             S.ExportRSSMaxDays = Convert.ToInt32(this.txtExportRSSMaxDays.Text);
             S.ExportRSSMaxShows = Convert.ToInt32(this.txtExportRSSMaxShows.Text);
-            S.ExportRSSDaysPast = Convert.ToInt32(this.txtExportRSSDaysPast.Text); 
+            S.ExportRSSDaysPast = Convert.ToInt32(this.txtExportRSSDaysPast.Text);
             S.KeepTogether = this.cbKeepTogether.Checked;
             S.LeadingZeroOnSeason = this.cbLeadingZero.Checked;
             S.ShowInTaskbar = this.chkShowInTaskbar.Checked;
@@ -127,6 +127,8 @@ namespace TVRename
             S.LookForDateInFilename = this.cbLookForAirdate.Checked;
             S.MonitorFolders = this.cbMonitorFolder.Checked;
 
+            S.ArtworkPath = this.txtArtworkPath.Text;
+
             if (this.rbFolderFanArt.Checked)
                 S.FolderJpgIs = TVSettings.FolderJpgIsType.FanArt;
             else if (this.rbFolderBanner.Checked)
@@ -151,7 +153,7 @@ namespace TVRename
 
             db.SaveCache();
             db.Unlock("Preferences-OK");
-            
+
             try
             {
                 S.SampleFileMaxSizeMB = int.Parse(this.txtMaxSampleSize.Text);
@@ -179,7 +181,7 @@ namespace TVRename
             S.RSSURLs.Clear();
             for (int i = 1; i < this.RSSGrid.RowsCount; i++)
             {
-                string url = (string) (this.RSSGrid[i, 0].Value);
+                string url = (string)(this.RSSGrid[i, 0].Value);
                 if (!string.IsNullOrEmpty(url))
                     S.RSSURLs.Add(url);
             }
@@ -272,6 +274,8 @@ namespace TVRename
             this.cbLeaveOriginals.Checked = S.LeaveOriginals;
             EnterPreferredLanguage = S.PreferredLanguage;
 
+            this.txtArtworkPath.Text = S.ArtworkPath;
+
             switch (S.WTWDoubleClick)
             {
                 case TVSettings.WTWDoubleClickAction.Search:
@@ -319,7 +323,7 @@ namespace TVRename
             FillTreeViewColoringShowStatusTypeCombobox();
         }
 
-        
+
 
         private void FillTreeViewColoringShowStatusTypeCombobox()
         {
@@ -336,7 +340,7 @@ namespace TVRename
             List<ShowItem> shows = this.mDoc.GetShowItems(false);
             foreach (var show in shows)
             {
-                if(!showStatusList.Contains(show.ShowStatus))
+                if (!showStatusList.Contains(show.ShowStatus))
                     showStatusList.Add(show.ShowStatus);
             }
             foreach (string status in showStatusList)
@@ -518,7 +522,7 @@ namespace TVRename
 
         private void lbSearchFolders_DragDrop(object sender, System.Windows.Forms.DragEventArgs e)
         {
-            string[] files = (string[]) (e.Data.GetData(DataFormats.FileDrop));
+            string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop));
             for (int i = 0; i < files.Length; i++)
             {
                 string path = files[i];
@@ -604,7 +608,7 @@ namespace TVRename
 
         private void AddNewReplacementRow(string from, string to, bool ins)
         {
-            SourceGrid.Cells.Views.Cell roModel = new SourceGrid.Cells.Views.Cell {ForeColor = Color.Gray};
+            SourceGrid.Cells.Views.Cell roModel = new SourceGrid.Cells.Views.Cell { ForeColor = Color.Gray };
 
             int r = this.ReplacementsGrid.RowsCount;
             this.ReplacementsGrid.RowsCount = r + 1;
@@ -676,7 +680,7 @@ namespace TVRename
             int[] rowsIndex = this.RSSGrid.Selection.GetSelectionRegion().GetRowsIndex();
 
             if (rowsIndex.Length > 0)
-                TVDoc.SysOpen((string) (this.RSSGrid[rowsIndex[0], 0].Value));
+                TVDoc.SysOpen((string)(this.RSSGrid[rowsIndex[0], 0].Value));
         }
 
         private void SetupLanguages()
@@ -811,7 +815,7 @@ namespace TVRename
             {
                 // don't delete compulsory items
                 int n = rowsIndex[0];
-                string from = (string) (this.ReplacementsGrid[n, 0].Value);
+                string from = (string)(this.ReplacementsGrid[n, 0].Value);
                 if (string.IsNullOrEmpty(from) || (TVSettings.CompulsoryReplacements().IndexOf(from) == -1))
                     this.ReplacementsGrid.Rows.Remove(n);
             }
@@ -859,7 +863,7 @@ namespace TVRename
             }
             if (colorDialog.ShowDialog(this) == DialogResult.OK)
             {
-                this.txtShowStatusColor.Text =  TranslateColorToHtml(colorDialog.Color);
+                this.txtShowStatusColor.Text = TranslateColorToHtml(colorDialog.Color);
                 this.txtShowStatusColor.ForeColor = colorDialog.Color;
             }
         }
