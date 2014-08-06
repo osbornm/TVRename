@@ -80,13 +80,6 @@ namespace TVRename
             {
             }
 
-            ActionCopyMoveRename.WriteMetaData(
-                this.From.FullName,
-                this.Episode,
-                settings.ArtworkPath);
-
-
-
             if (this.QuickOperation())
                 this.OSMoveRename(stats); // ask the OS to do it for us, since it's easy and quick!
             else
@@ -100,6 +93,14 @@ namespace TVRename
             }
             catch
             {
+            }
+
+            if (!this.Error)
+            {
+                ActionCopyMoveRename.WriteMetaData(
+                    this.To.FullName,
+                    this.Episode,
+                    settings.ArtworkPath);
             }
 
             return !this.Error;
@@ -408,10 +409,6 @@ namespace TVRename
         {
             using (TagLib.File file = TagLib.File.Create(episodePath))
             {
-                // clear out all the old tags on the file
-                file.RemoveTags(TagLib.TagTypes.AllTags);
-                file.Tag.Clear();
-
                 TagLib.Mpeg4.AppleTag customTag = (TagLib.Mpeg4.AppleTag)file.GetTag(TagLib.TagTypes.Apple, true);
 
                 // Track Number? (Not sure what this is used for)
@@ -446,9 +443,9 @@ namespace TVRename
                 customTag.SetText("ldes", episode.Overview);
 
                 // Artwork
-                if (file.Tag.Pictures.Length < 1 && !string.IsNullOrEmpty(artworkRootPath))
+                if (!string.IsNullOrEmpty(artworkRootPath))
                 {
-                    var artwork = ActionCopyMoveRename.FindArtworkPath(@"C:\Development\TestMedia\artwork", episode.SI.ShowName, episode.SeasonNumber);
+                    var artwork = ActionCopyMoveRename.FindArtworkPath(artworkRootPath, episode.SI.ShowName, episode.SeasonNumber);
                     file.Tag.Pictures = artwork.Select(a => new TagLib.Picture(a)).ToArray();
                 }
 
