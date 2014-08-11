@@ -438,9 +438,14 @@ namespace TVRename
                 customTag.ClearData("tven");
                 customTag.SetText("tven", episode.Name);
 
-                // Description
+                // Short Description
+                customTag.ClearData("desc");
+                customTag.SetText("desc", ToShortDescription(episode.Overview));
+
+                // Long Description
                 customTag.ClearData("ldes");
                 customTag.SetText("ldes", episode.Overview);
+                
 
                 // Artwork
                 if (!string.IsNullOrEmpty(artworkRootPath))
@@ -463,6 +468,13 @@ namespace TVRename
             possibleArtwork.AddRange(Directory.GetFiles(rootPath,
                 showName + "?.*"));
             return possibleArtwork;
+        }
+
+        public static string ToShortDescription(string value)
+        {
+            if (String.IsNullOrEmpty(value) || value.Length < 251)
+                return value;
+            return value.Substring(0, 251) + "...";
         }
 
         // --------------------------------------------------------------------------------------------------------
